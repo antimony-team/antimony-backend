@@ -1,12 +1,12 @@
-package user
+package statusMessage
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterRoutes(route *gin.Engine, handler Handler) {
-	routes := route.Group("/login")
+	routes := route.Group("/status-messages")
 	{
-		routes.POST("", handler.Login)
+		routes.GET("", handler.Get)
 	}
 }
