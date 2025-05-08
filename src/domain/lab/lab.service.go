@@ -12,9 +12,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/charmbracelet/log"
+	"github.com/creack/pty"
 	"github.com/gin-gonic/gin"
 	"github.com/samber/lo"
 	"gopkg.in/yaml.v3"
+	"os"
+	"os/exec"
 	"regexp"
 	"slices"
 	"sort"
@@ -114,6 +117,22 @@ func (s *labService) RunScheduler() {
 	}
 }
 
+func ReadFromPty(ptyFile *os.File, callback func(string)) {
+	buf := make([]byte, 1024)
+	for {
+		n, err := ptyFile.Read(buf)
+		if err != nil {
+			fmt.Println("Error reading from PTY:", err)
+			return
+		}
+		callback(string(buf[:n])) // Call the callback with the data read
+	}
+}
+
+type TerminalData struct {
+	Data string `json:"data"`
+}
+
 func (s *labService) initSchedule() {
 	ctx := context.Background()
 
@@ -152,6 +171,33 @@ func (s *labService) initSchedule() {
 					if err != nil {
 						log.Errorf("Failed to setup container logs for container %s: %s", container.ContainerId, err.Error())
 					}
+
+					//cmd := exec.Command(fmt.Sprintf("docker exec -it %s bash", container.ContainerId))
+					cmd := exec.Command("docker", "exec", "-it", container.ContainerId, "bash")
+					cmd.Env = os.Environ()
+					cmd.Env = append(cmd.Env, "DOCKER_HOST=unix:///var/run/docker.sock")
+					ptyFile, err := pty.Start(cmd)
+					if err != nil {
+						fmt.Println("Error starting PTY:", err)
+					} else {
+						callback := func(ctx context.Context, data *TerminalData, authUser *auth.AuthenticatedUser, onResponse func(response utils.OkResponse[any]), onError func(response utils.ErrorResponse)) {
+							_, err := ptyFile.Write([]byte(data.Data))
+							if err != nil {
+								log.Infof("Error writing to PTY: %s", err)
+							}
+						}
+
+						terminalNamespace := socket.CreateNamespace[TerminalData](
+							s.socketManager, false, false, callback,
+							"term", container.ContainerId,
+						)
+
+						go ReadFromPty(ptyFile, func(data string) {
+							terminalNamespace.Send(TerminalData{
+								Data: data,
+							})
+						})
+					}
 				}
 
 				s.instancesMutex.Lock()
@@ -167,6 +213,7 @@ func (s *labService) initSchedule() {
 				s.instancesMutex.Unlock()
 			}
 		} else {
+			main
 			// Lab has not been run before
 			if lab.StartTime.Unix() >= time.Now().Unix() {
 				s.scheduleLab(lab)

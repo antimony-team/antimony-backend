@@ -5,12 +5,51 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/charmbracelet/log"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"os/exec"
 )
 
 type ContainerlabProvider struct{}
+
+func (p *ContainerlabProvider) OpenShell(
+	ctx context.Context,
+	containerID string,
+) (response types.HijackedResponse, err error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		log.Errorf("Failed to create client: %v", err)
+		return
+	}
+	process, err := cli.ContainerExecCreate(ctx, containerID, container.ExecOptions{
+		AttachStderr: true,
+		AttachStdin:  true,
+		AttachStdout: true,
+	})
+
+	if err != nil {
+		log.Errorf("Failed to create exec: %v", err)
+		return
+	}
+
+	if err = cli.ContainerExecStart(ctx, process.ID, container.ExecStartOptions{}); err != nil {
+		log.Errorf("Failed to start exec: %v", err)
+		return
+	}
+
+	response, err = cli.ContainerExecAttach(ctx, process.ID, container.ExecAttachOptions{})
+	return response, err
+}
+
+func (p *ContainerlabProvider) CloseShell(ctx context.Context, containerID string, execID string) error {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		log.Errorf("Failed to create client: %v", err)
+		return nil
+	}
+
+}
 
 func (p *ContainerlabProvider) Deploy(
 	ctx context.Context,

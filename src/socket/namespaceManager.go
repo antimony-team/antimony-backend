@@ -61,11 +61,11 @@ func CreateNamespace[T any](
 	socketManager SocketManager,
 	isAnonymous bool, useBacklog bool,
 	onData func(
-		ctx context.Context,
-		data *T, authUser *auth.AuthenticatedUser,
-		onResponse func(response utils.OkResponse[any]),
-		onError func(response utils.ErrorResponse),
-	),
+	ctx context.Context,
+	data *T, authUser *auth.AuthenticatedUser,
+	onResponse func(response utils.OkResponse[any]),
+	onError func(response utils.ErrorResponse),
+),
 	namespacePath ...string,
 ) NamespaceManager[T] {
 	backlog := make([]T, 0)
@@ -115,8 +115,9 @@ func CreateNamespace[T any](
 				}
 
 				var data T
+
 				if err := json.Unmarshal([]byte(raw[0].(string)), &data); err != nil {
-					log.Error("[SOCK] Recieved invalid socket request.", "ns", namespaceName, "err", err.Error())
+					log.Error("[SOCK] Received invalid socket request.", "ns", namespaceName, "err", err.Error())
 					if ack != nil {
 						errorResponse := utils.CreateSocketErrorResponse(utils.ErrorInvalidSocketRequest)
 						ack([]any{errorResponse}, nil)

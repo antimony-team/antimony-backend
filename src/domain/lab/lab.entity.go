@@ -62,8 +62,9 @@ type Instance struct {
 	// Recovered Whether the instance has been recovered after an Antimony restart
 	Recovered bool
 
-	TopologyFile string
-	LogNamespace socket.NamespaceManager[string]
+	TopologyFile      string
+	LogNamespace      socket.NamespaceManager[string]
+	TerminalNamespace socket.NamespaceManager[string]
 
 	// Mutex The mutex that is locked whenever an instance operation is in progress (e.g. deploy)
 	Mutex sync.Mutex

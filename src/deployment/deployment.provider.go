@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
 )
 
 type DeploymentProvider interface {
@@ -10,6 +11,9 @@ type DeploymentProvider interface {
 	Inspect(ctx context.Context, topologyFile string, onLog func(data string)) (output *InspectOutput, err error)
 	InspectAll(ctx context.Context) (*InspectOutput, error)
 	Redeploy(ctx context.Context, topologyFile string, onLog func(data string)) (output *string, err error)
+
+	OpenShell(ctx context.Context, containerID string) (response types.HijackedResponse, execID string, err error)
+	CloseShell(ctx context.Context, containerID string, execID string) error
 
 	Exec(ctx context.Context, topologyFile string, content string, onLog func(data string), onDone func(output *string, err error))
 	ExecOnNode(ctx context.Context, topologyFile string, content string, nodeName string, onLog func(data string), onDone func(output *string, err error))

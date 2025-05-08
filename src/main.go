@@ -28,7 +28,7 @@ import (
 
 // @Title          Antimony API
 // @Version        1.0
-// @Desciption     The Antimony API that connects to containerlab.
+// @Description     The Antimony API that connects to containerlab.
 
 // @Contact.name   Institute for Networking at OST
 // @Contact.url    https://www.ost.ch/en/research-and-consulting-services/computer-science/ins-institute-for-network-and-security
