@@ -1,9 +1,9 @@
-# This file is used for testing Antimony locally in native mode
+# This file is used for testing Antimony locally in native mode with clabernetes as provider
 server:
   host: 0.0.0.0
   port: 3000
 deployment:
-  provider: containerlab
+  provider: clabernetes
 auth:
   enableNative: true
   enableOpenId: true
